@@ -5,6 +5,8 @@ import { AnimatedButton } from "@/components/ui/animated-button";
 import { StatsOverview } from "@/components/StatsOverview";
 import { ExamCard } from "@/components/ExamCard";
 import { StudyTips } from "@/components/StudyTips";
+import { EnhancedHomeView } from "@/components/EnhancedHomeView";
+import { EnhancedStatsView } from "@/components/EnhancedStatsView";
 import { ProfileView } from "@/components/ProfileView";
 import { StatsDetailedView } from "@/components/StatsDetailedView";
 import { BottomNavigation } from "@/components/ui/bottom-navigation";
@@ -79,56 +81,18 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
     switch (activeTab) {
       case 'home':
         return (
-          <div className="space-y-6">
-            <MobileCard className="mx-4 md:mx-0">
-              <GradientCard className="p-4 sm:p-6 text-center">
-                <div className="max-w-xl mx-auto space-y-2">
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">استعد لامتحان مكلف بالزبائن</h2>
-                  <p className="text-sm sm:text-base md:text-lg opacity-90 leading-relaxed">
-                    منصة شاملة للتحضير للامتحان الرسمي مع امتحانات تجريبية وأسئلة محدثة
-                  </p>
-                </div>
-              </GradientCard>
-            </MobileCard>
-
-            <div className="px-4 md:px-0">
-              <StatsOverview
-                totalExams={exams?.length || 0}
-                completedExams={completedAttempts.length}
-                averageScore={averageScore}
-                totalQuestions={totalQuestions}
-              />
-            </div>
-
-            <div className="px-4 md:px-0">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900">جميع الامتحانات المتاحة</h3>
-                <Button variant="ghost" size="sm" onClick={() => setActiveTab('exams')} className="text-emerald-600">
-                  عرض تفاصيل أكثر
-                </Button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-                {exams?.map((exam) => (
-                  <ExamCard
-                    key={exam.id}
-                    exam={exam}
-                    examStatus={getExamStatus(exam.id)}
-                    onStartExam={setSelectedExam}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="px-4 md:px-0">
-              <StudyTips />
-            </div>
-          </div>
+          <EnhancedHomeView
+            exams={exams || []}
+            examStatuses={allStatuses || new Map()}
+            onStartExam={setSelectedExam}
+            completedAttempts={completedAttempts}
+            averageScore={averageScore}
+            totalQuestions={totalQuestions}
+          />
         );
       case 'stats':
         return (
-          <div className="space-y-6 px-4 md:px-0">
-            <StatsDetailedView />
-          </div>
+          <EnhancedStatsView />
         );
       case 'exams':
         return (

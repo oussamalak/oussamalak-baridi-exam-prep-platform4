@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GradientCard } from '@/components/ui/gradient-card';
 import { MobileCard } from '@/components/ui/mobile-card';
@@ -9,6 +9,9 @@ import { StudyTips } from '@/components/StudyTips';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   GraduationCap,
   Trophy,
@@ -35,7 +38,16 @@ import {
   ArrowRight,
   Play,
   Eye,
-  Plus
+  Plus,
+  Search,
+  Filter,
+  Grid,
+  List,
+  SortAsc,
+  SortDesc,
+  XCircle,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -57,6 +69,12 @@ export const EnhancedHomeView = ({
   averageScore,
   totalQuestions
 }: EnhancedHomeViewProps) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState<'name' | 'difficulty' | 'duration' | 'completion'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showAllExams, setShowAllExams] = useState(false);
   const [selectedQuickAction, setSelectedQuickAction] = useState<string | null>(null);
 
@@ -143,7 +161,6 @@ export const EnhancedHomeView = ({
       icon: BookOpen,
       color: 'blue',
       action: () => {
-        // Find incomplete exam or start new one
         if (exams && exams.length > 0) {
           onStartExam(exams[0].id);
         }
@@ -156,11 +173,44 @@ export const EnhancedHomeView = ({
       icon: BarChart3,
       color: 'purple',
       action: () => {
-        // Navigate to results page
         window.location.href = '/results';
       }
     }
   ];
+
+  // Filter and sort exams
+  const filteredAndSortedExams = useMemo(() => {
+    if (!exams) return [];
+    
+    return exams
+      .filter(exam => {
+        const matchesSearch = exam.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            exam.description?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = selectedCategory === 'all';
+        const matchesDifficulty = selectedDifficulty === 'all';
+        
+        return matchesSearch && matchesCategory && matchesDifficulty;
+      })
+      .sort((a, b) => {
+        let comparison = 0;
+        
+        switch (sortBy) {
+          case 'name':
+            comparison = a.title.localeCompare(b.title, 'ar');
+            break;
+          case 'duration':
+            comparison = a.duration_minutes - b.duration_minutes;
+            break;
+          case 'completion':
+            const aCompleted = examStatuses?.get(a.id)?.is_completed ? 1 : 0;
+            const bCompleted = examStatuses?.get(b.id)?.is_completed ? 1 : 0;
+            comparison = bCompleted - aCompleted;
+            break;
+        }
+        
+        return sortOrder === 'asc' ? comparison : -comparison;
+      });
+  }, [exams, searchQuery, selectedCategory, selectedDifficulty, sortBy, sortOrder, examStatuses]);
 
   // Recent achievements
   const recentAchievements = [
@@ -189,6 +239,12 @@ export const EnhancedHomeView = ({
 
   // Study streak calculation
   const studyStreak = Math.min(completedAttempts.length, 7);
+
+  // Recent activity
+  const recentActivity = completedAttempts.slice(0, 5);
+
+  // Display exams (show limited or all based on state)
+  const displayedExams = showAllExams ? filteredAndSortedExams : filteredAndSortedExams.slice(0, 6);
 
   return (
     <div className="space-y-6">
@@ -273,8 +329,8 @@ export const EnhancedHomeView = ({
                 whileTap={{ scale: 0.95 }}
               >
                 <MobileCard 
+                  className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${colorClasses[action.color as keyof typeof colorClasses]}`}
                   onClick={action.action}
-                  className={`cursor-pointer transition-all duration-300 ${colorClasses[action.color as keyof typeof colorClasses]} border-2`}
                 >
                   <div className="p-4 text-center">
                     <div className={`w-12 h-12 bg-gradient-to-br ${colorClasses[action.color as keyof typeof colorClasses].split(' ')[0]} ${colorClasses[action.color as keyof typeof colorClasses].split(' ')[1]} rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg`}>
@@ -290,125 +346,260 @@ export const EnhancedHomeView = ({
         </div>
       </motion.div>
 
-      {/* Enhanced Statistics Overview */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="px-4 md:px-0"
-      >
+      {/* Statistics Overview */}
+      <div className="px-4 md:px-0">
         <StatsOverview
           totalExams={exams?.length || 0}
           completedExams={completedAttempts.length}
           averageScore={averageScore}
           totalQuestions={totalQuestions}
         />
+      </div>
+
+      {/* Search and Filters */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="px-4 md:px-0"
+      >
+        <MobileCard>
+          <div className="p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900">البحث والتصفية</h3>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                >
+                  <Grid className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="ابحث في الامتحانات..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pr-10 text-right"
+              />
+            </div>
+
+            {/* Filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="الفئة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الفئات</SelectItem>
+                  <SelectItem value="general">عام</SelectItem>
+                  <SelectItem value="specialized">متخصص</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
+                <SelectTrigger>
+                  <SelectValue placeholder="المستوى" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع المستويات</SelectItem>
+                  <SelectItem value="easy">سهل</SelectItem>
+                  <SelectItem value="medium">متوسط</SelectItem>
+                  <SelectItem value="hard">صعب</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="ترتيب حسب" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">الاسم</SelectItem>
+                  <SelectItem value="duration">المدة</SelectItem>
+                  <SelectItem value="completion">الإكمال</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sort Order */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant={sortOrder === 'asc' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSortOrder('asc')}
+              >
+                <SortAsc className="w-4 h-4 mr-1" />
+                تصاعدي
+              </Button>
+              <Button
+                variant={sortOrder === 'desc' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSortOrder('desc')}
+              >
+                <SortDesc className="w-4 h-4 mr-1" />
+                تنازلي
+              </Button>
+            </div>
+          </div>
+        </MobileCard>
       </motion.div>
 
-      {/* Study Streak */}
+      {/* Exams Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.3 }}
         className="px-4 md:px-0"
       >
-        <MobileCard>
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Flame className="w-6 h-6 text-orange-500" />
-                سلسلة التدريب
-              </h3>
-              <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                {studyStreak} أيام
-              </Badge>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+          <h3 className="text-xl font-bold text-gray-900">
+            الامتحانات المتاحة ({filteredAndSortedExams.length})
+          </h3>
+          {filteredAndSortedExams.length > 6 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowAllExams(!showAllExams)}
+            >
+              {showAllExams ? 'عرض أقل' : 'عرض المزيد'}
+            </Button>
+          )}
+        </div>
+
+        {displayedExams.length === 0 ? (
+          <MobileCard>
+            <div className="p-8 text-center">
+              <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">لا توجد امتحانات</h3>
+              <p className="text-gray-600 mb-4">لم يتم العثور على امتحانات تطابق معايير البحث</p>
+              <Button onClick={() => {
+                setSearchQuery('');
+                setSelectedCategory('all');
+                setSelectedDifficulty('all');
+              }}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                إعادة تعيين الفلاتر
+              </Button>
             </div>
-            
-            <div className="flex items-center gap-2 mb-4">
-              {[...Array(7)].map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                    i < studyStreak 
-                      ? 'bg-orange-500 text-white' 
-                      : 'bg-gray-200 text-gray-400'
-                  }`}
+          </MobileCard>
+        ) : (
+          <div className={viewMode === 'grid' 
+            ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6" 
+            : "space-y-4"
+          }>
+            <AnimatePresence>
+              {displayedExams.map((exam, index) => (
+                <motion.div
+                  key={exam.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ delay: index * 0.1 }}
                 >
-                  {i + 1}
-                </div>
+                  <ExamCard
+                    exam={exam}
+                    examStatus={examStatuses?.get(exam.id)}
+                    onStartExam={onStartExam}
+                  />
+                </motion.div>
               ))}
-            </div>
-            
-            <p className="text-gray-600 text-sm">
-              {studyStreak >= 7 
-                ? "🔥 رائع! حافظت على سلسلة تدريب مثالية!" 
-                : `استمر في التدريب لتصل إلى ${7 - studyStreak} أيام أخرى`
-              }
-            </p>
+            </AnimatePresence>
           </div>
-        </MobileCard>
+        )}
       </motion.div>
 
-      {/* Recent Achievements */}
+      {/* Recent Activity */}
+      {recentActivity.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="px-4 md:px-0"
+        >
+          <h3 className="text-xl font-bold text-gray-900 mb-4">النشاط الأخير</h3>
+          <MobileCard>
+            <div className="p-4 space-y-3">
+              {recentActivity.map((activity, index) => (
+                <motion.div
+                  key={activity.id}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                      <BookOpen className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <div className="font-semibold">{activity.exams?.title || 'امتحان'}</div>
+                      <div className="text-sm text-gray-600">
+                        {format(new Date(activity.completed_at!), 'dd MMMM yyyy', { locale: ar })}
+                      </div>
+                    </div>
+                  </div>
+                  <Badge variant={(activity.score || 0) >= 70 ? "secondary" : "destructive"}>
+                    {activity.score}%
+                  </Badge>
+                </motion.div>
+              ))}
+            </div>
+          </MobileCard>
+        </motion.div>
+      )}
+
+      {/* Achievements */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
+        transition={{ duration: 0.6, delay: 0.5 }}
         className="px-4 md:px-0"
       >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-gray-900">الإنجازات الأخيرة</h3>
-          <Button variant="ghost" size="sm" className="text-emerald-600">
-            عرض الكل
-          </Button>
-        </div>
-        
+        <h3 className="text-xl font-bold text-gray-900 mb-4">الإنجازات الأخيرة</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {recentAchievements.map((achievement, index) => {
             const Icon = achievement.icon;
             const colorClasses = {
-              emerald: 'from-emerald-500 to-green-600 bg-emerald-50 border-emerald-200',
-              orange: 'from-orange-500 to-red-600 bg-orange-50 border-orange-200',
-              yellow: 'from-yellow-500 to-orange-600 bg-yellow-50 border-yellow-200'
+              emerald: 'from-emerald-500 to-green-600 border-emerald-200 bg-emerald-50',
+              orange: 'from-orange-500 to-red-600 border-orange-200 bg-orange-50',
+              yellow: 'from-yellow-500 to-orange-600 border-yellow-200 bg-yellow-50'
             };
 
             return (
               <motion.div
-                key={index}
+                key={achievement.title}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.05 }}
               >
-                <MobileCard className={`${achievement.unlocked ? colorClasses[achievement.color as keyof typeof colorClasses] : 'bg-gray-50 border-gray-200'} border-2 relative overflow-hidden`}>
-                  <div className="p-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        achievement.unlocked 
-                          ? `bg-gradient-to-br ${colorClasses[achievement.color as keyof typeof colorClasses].split(' ')[0]} ${colorClasses[achievement.color as keyof typeof colorClasses].split(' ')[1]} shadow-lg`
-                          : 'bg-gray-200'
-                      }`}>
-                        <Icon className={`w-5 h-5 ${achievement.unlocked ? 'text-white' : 'text-gray-400'}`} />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className={`font-bold ${achievement.unlocked ? 'text-gray-900' : 'text-gray-500'}`}>
-                          {achievement.title}
-                        </h4>
-                        <p className={`text-xs ${achievement.unlocked ? 'text-gray-700' : 'text-gray-400'}`}>
-                          {achievement.description}
-                        </p>
-                      </div>
+                <MobileCard className={`${achievement.unlocked ? colorClasses[achievement.color as keyof typeof colorClasses] : 'bg-gray-50 opacity-60'}`}>
+                  <div className="p-4 text-center">
+                    <div className={`w-12 h-12 ${achievement.unlocked ? `bg-gradient-to-br ${colorClasses[achievement.color as keyof typeof colorClasses].split(' ')[0]} ${colorClasses[achievement.color as keyof typeof colorClasses].split(' ')[1]}` : 'bg-gray-200'} rounded-full flex items-center justify-center mx-auto mb-3`}>
+                      <Icon className={`w-6 h-6 ${achievement.unlocked ? 'text-white' : 'text-gray-400'}`} />
                     </div>
-                    
+                    <h4 className={`font-bold mb-1 ${achievement.unlocked ? 'text-gray-900' : 'text-gray-500'}`}>
+                      {achievement.title}
+                    </h4>
+                    <p className={`text-sm ${achievement.unlocked ? 'text-gray-600' : 'text-gray-400'}`}>
+                      {achievement.description}
+                    </p>
                     {achievement.unlocked && (
-                      <motion.div
-                        className="absolute top-2 right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center"
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ delay: 0.5, type: "spring", stiffness: 300 }}
-                      >
-                        <CheckCircle className="w-4 h-4 text-yellow-800" />
-                      </motion.div>
+                      <Badge className="mt-2 bg-green-100 text-green-800">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        مُحقق
+                      </Badge>
                     )}
                   </div>
                 </MobileCard>
@@ -418,73 +609,10 @@ export const EnhancedHomeView = ({
         </div>
       </motion.div>
 
-      {/* Available Exams */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.5 }}
-        className="px-4 md:px-0"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-gray-900">الامتحانات المتاحة</h3>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setShowAllExams(!showAllExams)}
-            className="text-emerald-600"
-          >
-            {showAllExams ? 'عرض أقل' : 'عرض الكل'}
-          </Button>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-          {(showAllExams ? exams : exams?.slice(0, 3))?.map((exam) => (
-            <motion.div
-              key={exam.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <ExamCard
-                exam={exam}
-                examStatus={examStatuses?.get(exam.id)}
-                onStartExam={onStartExam}
-              />
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
       {/* Study Tips */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.6 }}
-        className="px-4 md:px-0"
-      >
+      <div className="px-4 md:px-0">
         <StudyTips />
-      </motion.div>
-
-      {/* Daily Motivation */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.7 }}
-        className="px-4 md:px-0"
-      >
-        <MobileCard>
-          <div className="p-6 text-center bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-2xl">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">💪 تحفيز اليوم</h3>
-            <p className="text-gray-700 leading-relaxed">
-              "النجاح ليس نهاية المطاف، والفشل ليس قاتلاً، بل الشجاعة للمتابعة هي التي تهم."
-            </p>
-            <p className="text-sm text-gray-600 mt-2">- ونستون تشرشل</p>
-          </div>
-        </MobileCard>
-      </motion.div>
+      </div>
     </div>
   );
 };
