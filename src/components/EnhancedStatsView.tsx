@@ -24,34 +24,7 @@ import {
   Area,
   AreaChart
 } from 'recharts';
-import {
-  TrendingUp, 
-  TrendingDown, 
-  Trophy, 
-  Target, 
-  Calendar,
-  Clock,
-  Award,
-  BarChart3,
-  PieChart as PieChartIcon,
-  Activity,
-  Star,
-  Zap,
-  Download,
-  Filter,
-  RefreshCw,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
-  Users,
-  Flame,
-  Crown,
-  Rocket,
-  Heart,
-  Gift,
-  Eye,
-  TrendingRight
-} from 'lucide-react';
+import { TrendingUp, TrendingDown, Trophy, Target, Calendar, Clock, Award, BarChart3, PieChart as PieChartIcon, Activity, Star, Zap, Download, Filter, RefreshCw, AlertCircle, CheckCircle, XCircle, Users, Flame, Crown, Rocket, Heart, Gift, Eye, TrendingUp as TrendingRight } from 'lucide-react';
 import { format, subDays, subWeeks, subMonths, isAfter } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
