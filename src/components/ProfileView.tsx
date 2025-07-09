@@ -31,6 +31,7 @@ import {
   Settings,
   Shield,
   Bell,
+  BookOpen,
   Download,
   Trash2,
   Camera,
