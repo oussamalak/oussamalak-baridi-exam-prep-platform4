@@ -9,6 +9,7 @@ export const useUserAttempts = () => {
   return useQuery({
     queryKey: ['user-attempts'],
     queryFn: async () => {
+      try {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -30,7 +31,14 @@ export const useUserAttempts = () => {
       }
 
       return data;
+      } catch (error) {
+        console.error('Error fetching user attempts:', error);
+        // Return empty array instead of throwing
+        return [];
+      }
     },
+    retry: 1,
+    staleTime: 30000, // 30 seconds
   });
 };
 

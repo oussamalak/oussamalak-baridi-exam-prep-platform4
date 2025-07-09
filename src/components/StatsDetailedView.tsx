@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useUserAttempts } from '@/hooks/useUserAttempts';
 import { MobileCard } from '@/components/ui/mobile-card';
@@ -27,6 +26,11 @@ export const StatsDetailedView = () => {
   const { data: userAttempts, isLoading } = useUserAttempts();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'all'>('all');
 
+  // Add null check early
+  if (!userAttempts) {
+    return <div>Loading...</div>;
+  }
+
   if (isLoading) {
     return (
       <div className="text-center py-8">
@@ -37,6 +41,7 @@ export const StatsDetailedView = () => {
   }
 
   const completedAttempts = userAttempts?.filter(attempt => attempt.is_completed) || [];
+  
   
   if (completedAttempts.length === 0) {
     return (
@@ -51,6 +56,14 @@ export const StatsDetailedView = () => {
   }
 
   // Calculate detailed statistics
+  if (!completedAttempts || completedAttempts.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p>No data available</p>
+      </div>
+    );
+  }
+
   const totalAttempts = completedAttempts.length;
   const averageScore = completedAttempts.reduce((sum, attempt) => sum + (attempt.score || 0), 0) / totalAttempts;
   const highestScore = Math.max(...completedAttempts.map(attempt => attempt.score || 0));
@@ -263,7 +276,7 @@ export const StatsDetailedView = () => {
           </h3>
           
           <div className="space-y-3">
-            {recentAttempts.slice(0, 5).map((attempt, index) => (
+            {(recentAttempts || []).slice(0, 5).map((attempt, index) => (
               <div 
                 key={attempt.id}
                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
@@ -273,7 +286,7 @@ export const StatsDetailedView = () => {
                     <span className="text-sm font-bold text-emerald-600">{index + 1}</span>
                   </div>
                   <div>
-                    <div className="font-semibold">{attempt.exams?.title || 'امتحان'}</div>
+                    <div className="font-semibold">{attempt?.exams?.title || 'امتحان'}</div>
                     <div className="text-sm text-gray-600">
                       {format(new Date(attempt.completed_at!), 'dd MMM yyyy', { locale: ar })}
                     </div>
@@ -281,7 +294,7 @@ export const StatsDetailedView = () => {
                 </div>
                 <Badge 
                   variant={(attempt.score || 0) >= 70 ? "secondary" : "destructive"}
-                  className="text-lg px-3 py-1"
+                  className="text-sm px-2 py-1"
                 >
                   {attempt.score}%
                 </Badge>
