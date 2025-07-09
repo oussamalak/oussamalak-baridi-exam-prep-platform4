@@ -17,7 +17,8 @@ import {
   PieChart,
   Activity,
   Star,
-  Zap
+  Zap,
+  BookOpen
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
