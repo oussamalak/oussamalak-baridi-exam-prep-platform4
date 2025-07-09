@@ -4,8 +4,7 @@ export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration
   // Check if running in StackBlitz or WebContainer environment
   if (window.location.hostname.includes('stackblitz.io') || 
       window.location.hostname.includes('webcontainer.io') ||
-      window.location.hostname.includes('bolt.new') ||
-      (window.location.hostname.includes('localhost') && window.location.port === '8080')) {
+      window.location.hostname.includes('bolt.new')) {
     console.log('Service Workers are not supported in this environment (StackBlitz/WebContainer)');
     return null;
   }
