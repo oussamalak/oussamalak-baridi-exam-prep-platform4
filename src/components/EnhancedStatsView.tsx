@@ -38,6 +38,11 @@ export const EnhancedStatsView = () => {
 
   const completedAttempts = userAttempts?.filter(attempt => attempt.is_completed) || [];
 
+  // Add null checks and default values
+  if (!userAttempts) {
+    return <div>Loading...</div>;
+  }
+
   // Filter data by selected period
   const filteredAttempts = useMemo(() => {
     if (selectedPeriod === 'all') return completedAttempts;
@@ -69,6 +74,15 @@ export const EnhancedStatsView = () => {
 
   // Calculate statistics
   const stats = useMemo(() => {
+    // Add safety checks
+    if (!filteredAttempts || filteredAttempts.length === 0) {
+      return {
+        totalAttempts: 0, averageScore: 0, highestScore: 0, lowestScore: 0,
+        totalTime: 0, averageTime: 0, excellentScores: 0, goodScores: 0,
+        fairScores: 0, poorScores: 0, successRate: 0, improvementTrend: 0
+      };
+    }
+
     const totalAttempts = filteredAttempts.length;
     const averageScore = totalAttempts > 0 
       ? filteredAttempts.reduce((sum, attempt) => sum + (attempt.score || 0), 0) / totalAttempts 
@@ -120,6 +134,11 @@ export const EnhancedStatsView = () => {
 
   // Prepare chart data
   const chartData = useMemo(() => {
+    // Add null check
+    if (!filteredAttempts || filteredAttempts.length === 0) {
+      return [];
+    }
+
     return filteredAttempts
       .sort((a, b) => new Date(a.completed_at!).getTime() - new Date(b.completed_at!).getTime())
       .map((attempt, index) => ({
@@ -143,6 +162,11 @@ export const EnhancedStatsView = () => {
 
   // Weekly performance data
   const weeklyData = useMemo(() => {
+    // Add safety check
+    if (!filteredAttempts || filteredAttempts.length === 0) {
+      return [];
+    }
+
     const weeks = [];
     for (let i = 6; i >= 0; i--) {
       const weekStart = subWeeks(new Date(), i);
@@ -167,7 +191,7 @@ export const EnhancedStatsView = () => {
 
   // Export functionality
   const exportData = (format: 'csv' | 'json') => {
-    const data = filteredAttempts.map(attempt => ({
+    const data = (filteredAttempts || []).map(attempt => ({
       تاريخ_الامتحان: format(new Date(attempt.completed_at!), 'yyyy-MM-dd HH:mm', { locale: ar }),
       اسم_الامتحان: attempt.exams?.title || 'امتحان',
       النتيجة: attempt.score,
@@ -175,6 +199,11 @@ export const EnhancedStatsView = () => {
       إجمالي_الأسئلة: attempt.total_questions,
       الوقت_المستغرق_بالدقائق: Math.floor((attempt.time_taken || 0) / 60)
     }));
+
+    // Check if data exists
+    if (!data || data.length === 0) {
+      return;
+    }
 
     if (format === 'csv') {
       const csv = [
@@ -208,15 +237,14 @@ export const EnhancedStatsView = () => {
     );
   }
 
-  if (completedAttempts.length === 0) {
+  if (!completedAttempts || completedAttempts.length === 0) {
     return (
-      <MobileCard>
-        <div className="p-8 text-center">
-          <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">لا توجد بيانات كافية</h3>
-          <p className="text-gray-600 mb-4">أكمل بعض الامتحانات لرؤية الإحصائيات المفصلة</p>
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <Activity className="w-12 h-12 text-emerald-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-gray-600">جاري تحميل الإحصائيات...</p>
         </div>
-      </MobileCard>
+      </div>
     );
   }
 
