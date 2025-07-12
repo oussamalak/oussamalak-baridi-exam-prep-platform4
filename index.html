@@ -127,6 +127,17 @@
         100% { width: 100%; }
       }
       
+      /* Auto-hide loading screen after animation completes */
+      .loading-screen.loaded {
+        opacity: 0;
+        pointer-events: none;
+      }
+      
+      .loading-progress.complete {
+        animation-duration: 1.5s;
+        animation-fill-mode: forwards;
+      }
+      
       /* Prevent flash of unstyled content */
       body {
         margin: 0;
@@ -168,18 +179,26 @@
     <script type="module" src="/src/main.tsx"></script>
     
     <script>
-      // Hide initial loading screen when React app loads
+      // Hide initial loading screen when React app loads - without setTimeout
       window.addEventListener('load', function() {
-        setTimeout(function() {
-          const loadingScreen = document.getElementById('loading-screen');
-          if (loadingScreen) {
-            loadingScreen.style.opacity = '0';
-            setTimeout(function() {
+        const loadingScreen = document.getElementById('loading-screen');
+        const loadingProgress = document.querySelector('.loading-progress');
+        
+        if (loadingScreen && loadingProgress) {
+          // Mark progress as complete to finish animation
+          loadingProgress.classList.add('complete');
+          
+          // Listen for animation end to hide loading screen
+          loadingProgress.addEventListener('animationend', function() {
+            loadingScreen.classList.add('loaded');
+            document.body.style.overflow = 'auto';
+            
+            // Remove from DOM after CSS transition completes
+            loadingScreen.addEventListener('transitionend', function() {
               loadingScreen.style.display = 'none';
-              document.body.style.overflow = 'auto';
-            }, 500);
-          }
-        }, 1500);
+            });
+          });
+        }
       });
       
       // Register service worker
