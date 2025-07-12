@@ -33,49 +33,7 @@ import {
   PolarRadiusAxis,
   Radar
 } from 'recharts';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Trophy, 
-  Target, 
-  Calendar, 
-  Clock, 
-  Award, 
-  BarChart3, 
-  PieChart as PieChartIcon, 
-  Activity, 
-  Star, 
-  Zap, 
-  Download, 
-  Filter, 
-  RefreshCw, 
-  AlertCircle, 
-  CheckCircle, 
-  XCircle, 
-  Users, 
-  Flame, 
-  Crown, 
-  Rocket, 
-  Heart, 
-  Gift, 
-  Eye, 
-  TrendingRight,
-  Search,
-  SortAsc,
-  SortDesc,
-  Calendar as CalendarIcon,
-  FileText,
-  Image,
-  Settings,
-  Maximize2,
-  Minimize2,
-  Grid,
-  List,
-  ChevronLeft,
-  ChevronRight,
-  MoreVertical,
-  Loader2
-} from 'lucide-react';
+import { TrendingUp, TrendingDown, Trophy, Target, Calendar, Clock, Award, BarChart3, PieChart as PieChartIcon, Activity, Star, Zap, Download, Filter, RefreshCw, AlertCircle, CheckCircle, XCircle, Users, Flame, Crown, Rocket, Heart, Gift, Eye, TrendingUp as TrendingRight, Search, SortAsc, SortDesc, Calendar as CalendarIcon, FileText, Image, Settings, Maximize2, Minimize2, Grid, List, ChevronLeft, ChevronRight, MoreVertical, Loader2 } from 'lucide-react';
 import { format, subDays, subWeeks, subMonths, isAfter, parseISO, isValid } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { ErrorBoundary } from 'react-error-boundary';
