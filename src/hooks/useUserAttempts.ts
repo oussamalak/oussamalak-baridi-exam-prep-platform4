@@ -2,14 +2,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCallback } from 'react';
 
 export const useUserAttempts = () => {
   const { toast } = useToast();
 
-  return useQuery({
-    queryKey: ['user-attempts'],
-    queryFn: async () => {
-      try {
+  const queryFn = useCallback(async () => {
+    try {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -30,16 +29,27 @@ export const useUserAttempts = () => {
         throw error;
       }
 
-      return data;
-      } catch (error) {
-        console.error('Error fetching user attempts:', error);
-        // Return empty array instead of throwing
-        return [];
-      }
-    },
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching user attempts:', error);
+      // Return empty array instead of throwing to prevent crashes
+      return [];
+    }
+  }, []);
+
+  const query = useQuery({
+    queryKey: ['user-attempts'],
+    queryFn,
     retry: 1,
     staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
   });
+
+  return {
+    ...query,
+    refetch: query.refetch
+  };
 };
 
 export const useStartExamAttempt = () => {
