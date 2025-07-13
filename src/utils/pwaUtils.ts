@@ -2,10 +2,41 @@
 
 export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration | null> => {
   // Check if running in StackBlitz or WebContainer environment
-  if (window.location.hostname.includes('stackblitz.io') || 
-      window.location.hostname.includes('stackblitz.com') ||
-      window.location.hostname.includes('webcontainer.io') ||
-      window.location.hostname.includes('bolt.new')) {
+  const isStackBlitzEnvironment = () => {
+    // Check current window hostname
+    const currentHostname = window.location.hostname;
+    if (currentHostname.includes('stackblitz.io') || 
+        currentHostname.includes('stackblitz.com') ||
+        currentHostname.includes('webcontainer.io') ||
+        currentHostname.includes('bolt.new')) {
+      return true;
+    }
+    
+    // Check parent window hostname if in iframe
+    try {
+      if (window.parent && window.parent !== window) {
+        const parentHostname = window.parent.location.hostname;
+        if (parentHostname.includes('stackblitz.io') || 
+            parentHostname.includes('stackblitz.com') ||
+            parentHostname.includes('webcontainer.io') ||
+            parentHostname.includes('bolt.new')) {
+          return true;
+        }
+      }
+    } catch (e) {
+      // Cross-origin access blocked, but we can check referrer as fallback
+      if (document.referrer.includes('stackblitz.io') ||
+          document.referrer.includes('stackblitz.com') ||
+          document.referrer.includes('webcontainer.io') ||
+          document.referrer.includes('bolt.new')) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+  
+  if (isStackBlitzEnvironment()) {
     console.log('Service Workers are not supported in this environment (StackBlitz/WebContainer)');
     return null;
   }
