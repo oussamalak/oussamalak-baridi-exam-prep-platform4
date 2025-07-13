@@ -58,9 +58,8 @@
     <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
     <link rel="preconnect" href="https://unmvdntddrkutnmmxzzg.supabase.co" />
     
-    <!-- Security -->
+    <!-- Security - Note: X-Frame-Options should be set via HTTP headers, not meta tags -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="X-Frame-Options" content="DENY" />
     <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
     
     <style>
@@ -225,8 +224,20 @@
       // Performance monitoring
       window.addEventListener('load', function() {
         if ('performance' in window) {
-          const perfData = performance.getEntriesByType('navigation')[0];
-          console.log('Page load time:', perfData.loadEventEnd - perfData.loadEventStart, 'ms');
+          // Use setTimeout to ensure all resources are loaded
+          setTimeout(() => {
+            const perfData = performance.getEntriesByType('navigation')[0];
+            if (perfData && perfData.loadEventEnd > 0 && perfData.loadEventStart > 0) {
+              const loadTime = perfData.loadEventEnd - perfData.loadEventStart;
+              if (loadTime > 0) {
+                console.log('Page load time:', loadTime, 'ms');
+              } else {
+                console.log('Page load time: Calculating...');
+              }
+            } else {
+              console.log('Page load time: Performance data not yet available');
+            }
+          }, 100);
         }
       });
     </script>

@@ -1,0 +1,20 @@
+# Security Headers
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Service Worker
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  
+# Manifest
+/manifest.json
+  Cache-Control: public, max-age=0, must-revalidate
+  Content-Type: application/manifest+json
+
+# Icons
+/icons/*
+  Cache-Control: public, max-age=31536000, immutable
