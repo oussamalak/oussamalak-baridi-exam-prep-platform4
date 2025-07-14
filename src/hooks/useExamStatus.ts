@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useCallback } from 'react';
 
 /**
  * Hook to fetch the latest completed attempt for a specific exam.
@@ -9,12 +10,13 @@ import { supabase } from '@/integrations/supabase/client';
 export const useExamStatus = (examId: string) => {
   return useQuery({
     queryKey: ['exam-status', examId],
-    queryFn: async () => {
+    queryFn: useCallback(async () => {
       console.log('🔍 FIXED: Fetching exam status for exam:', examId);
       
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
+        console.warn('⚠️ No authenticated user found');
         throw new Error('Unauthorized user');
       }
 
@@ -50,8 +52,14 @@ export const useExamStatus = (examId: string) => {
       console.log('🎯 FIXED: attempt_id value:', result.attempt_id);
 
       return result;
-    },
+    }, [examId]),
     enabled: !!examId,
+    staleTime: 30000, // 30 seconds
+    gcTime: 300000, // 5 minutes
+    retry: (failureCount, error: any) => {
+      if (error?.message?.includes('Unauthorized')) return false;
+      return failureCount < 2;
+    },
   });
 };
 

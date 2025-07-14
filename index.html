@@ -226,18 +226,22 @@
         if ('performance' in window) {
           // Use setTimeout to ensure all resources are loaded
           setTimeout(() => {
-            const perfData = performance.getEntriesByType('navigation')[0];
-            if (perfData && perfData.loadEventEnd > 0 && perfData.loadEventStart > 0) {
-              const loadTime = perfData.loadEventEnd - perfData.loadEventStart;
-              if (loadTime > 0) {
-                console.log('Page load time:', loadTime, 'ms');
+            try {
+              const perfData = performance.getEntriesByType('navigation')[0];
+              if (perfData && perfData.loadEventEnd > 0 && perfData.loadEventStart > 0) {
+                const loadTime = perfData.loadEventEnd - perfData.loadEventStart;
+                if (loadTime > 0 && loadTime < 60000) { // Validate reasonable load time
+                  console.log('✅ Page load time:', Math.round(loadTime), 'ms');
+                } else {
+                  console.log('⏳ Page load time: Still calculating...');
+                }
               } else {
-                console.log('Page load time: Calculating...');
+                console.log('📊 Performance data not yet complete');
               }
-            } else {
-              console.log('Page load time: Performance data not yet available');
+            } catch (error) {
+              console.warn('⚠️ Performance measurement error:', error);
             }
-          }, 100);
+          }, 500); // Increased delay for more accurate measurement
         }
       });
     </script>

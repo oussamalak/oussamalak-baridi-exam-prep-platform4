@@ -15,6 +15,7 @@ import { PWAUpdatePrompt } from "./components/PWAUpdatePrompt";
 import { OfflineIndicator } from "./components/OfflineIndicator";
 import { OfflineFallback } from "./components/OfflineFallback";
 import { registerServiceWorker } from "./utils/pwaUtils";
+import { ErrorBoundary } from "./components/ui/error-boundary";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -109,31 +110,33 @@ const App = () => {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <OfflineIndicator />
-        <PWAInstaller />
-        <PWAUpdatePrompt />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/results" element={
-              <AuthLayout>
-                <Results />
-              </AuthLayout>
-            } />
-            <Route path="/" element={
-              <AuthLayout>
-                <Index />
-              </AuthLayout>
-            } />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <OfflineIndicator />
+          <PWAInstaller />
+          <PWAUpdatePrompt />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/results" element={
+                <AuthLayout>
+                  <Results />
+                </AuthLayout>
+              } />
+              <Route path="/" element={
+                <AuthLayout>
+                  <Index />
+                </AuthLayout>
+              } />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

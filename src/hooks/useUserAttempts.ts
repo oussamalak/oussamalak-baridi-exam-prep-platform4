@@ -7,13 +7,20 @@ import { useCallback } from 'react';
 export const useUserAttempts = () => {
   const { toast } = useToast();
 
-  const queryFn = useCallback(async () => {
+  return useQuery({
+    queryKey: ['user-attempts'],
+    queryFn: useCallback(async () => {
+      console.log('📊 Fetching user attempts...');
+      
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
+        console.warn('⚠️ No authenticated user for attempts');
         throw new Error('المستخدم غير مصرح له');
       }
+
+      console.log('👤 Fetching attempts for user:', user.id);
 
       const { data, error } = await supabase
         .from('user_attempts')
@@ -25,31 +32,36 @@ export const useUserAttempts = () => {
         .order('started_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching user attempts:', error);
+        console.error('❌ Error fetching user attempts:', error);
         throw error;
       }
 
+      console.log('✅ User attempts fetched successfully:', {
+        count: data?.length || 0,
+        completed: data?.filter(a => a.is_completed).length || 0
+      });
+
       return data || [];
     } catch (error) {
-      console.error('Error fetching user attempts:', error);
+      console.error('💥 Critical error in user attempts:', error);
       // Return empty array instead of throwing to prevent crashes
       return [];
     }
-  }, []);
-
-  const query = useQuery({
-    queryKey: ['user-attempts'],
-    queryFn,
+    }, []),
     retry: 1,
     staleTime: 30000, // 30 seconds
+    gcTime: 300000, // 5 minutes
     refetchOnWindowFocus: false,
     refetchOnMount: true,
+    onError: (error) => {
+      console.error('🚨 Query error in useUserAttempts:', error);
+      toast({
+        title: "خطأ في تحميل البيانات",
+        description: "حدث خطأ أثناء تحميل محاولاتك السابقة",
+        variant: "destructive",
+      });
+    }
   });
-
-  return {
-    ...query,
-    refetch: query.refetch
-  };
 };
 
 export const useStartExamAttempt = () => {
