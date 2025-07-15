@@ -1,6 +1,12 @@
 // Enhanced PWA utility functions with better error handling and features
 
 export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration | null> => {
+  // Check if running in development mode
+  if (import.meta.env.DEV) {
+    console.log('Service Worker registration skipped in development mode');
+    return null;
+  }
+
   // Check if running in StackBlitz or WebContainer environment
   const isStackBlitzEnvironment = () => {
     // Check current window hostname
